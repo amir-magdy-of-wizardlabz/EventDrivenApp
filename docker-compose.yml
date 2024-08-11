@@ -90,3 +90,4 @@ services:
       RabbitMQ__QueueNames__UserCreatedQueue: "user.created"
       Smtp__Host: "smtp4dev"
       Smtp__Port: 25
+      Smtp__FromAddress: "emailsender@domain.com"
