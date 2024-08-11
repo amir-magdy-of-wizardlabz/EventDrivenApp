@@ -1,0 +1,22 @@
+version: '3.4'
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: pass123~
+      POSTGRES_DB: event-driven-user-service
+    ports:
+      - "5432:5432"
+
+  userserviceapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5001:8080"
+    depends_on:
+      - db
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=db;Database=event-driven-user-service;Username=postgres;Password=pass123~"
