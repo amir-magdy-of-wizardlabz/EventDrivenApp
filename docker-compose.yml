@@ -6,15 +6,17 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: pass123~
-      POSTGRES_DB: event-driven-user-service
+      POSTGRES_MULTIPLE_DATABASES: event-driven-user-service,event-driven-order-service
     ports:
       - "5432:5432"
-  
+    volumes:
+      - ./create-multiple-postgresql-databases.sh:/docker-entrypoint-initdb.d/create-multiple-postgresql-databases.sh
+
   rabbitmq:
     image: rabbitmq:3-management
     ports:
-      - "5672:5672"  
-      - "15672:15672"  
+      - "5672:5672"
+      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: ruser
       RABBITMQ_DEFAULT_PASS: pass123~
@@ -27,9 +29,20 @@ services:
       - "5001:8080"
     depends_on:
       - db
-      - rabbitmq 
+      - rabbitmq
     environment:
       ConnectionStrings__DefaultConnection: "Host=db;Database=event-driven-user-service;Username=postgres;Password=pass123~"
       RabbitMQ__HostName: "rabbitmq"
       RabbitMQ__UserName: "ruser"
       RabbitMQ__Password: "pass123~"
+  orderserviceapi:
+    build:
+      context: ./OrderService  # Adjust context to include all necessary projects
+      dockerfile: OrderService.Api/Dockerfile
+    ports:
+      - "5002:8080"
+    depends_on:
+      - db
+      - rabbitmq
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=db;Database=event-driven-order-service;Username=postgres;Password=pass123~"
