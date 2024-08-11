@@ -26,6 +26,16 @@ services:
       timeout: 10s
       retries: 5
 
+  smtp4dev:
+    image: rnwood/smtp4dev
+    ports:
+      - "3000:80"
+      - "2525:25"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      MessageRetentionPeriod: "30.00:00:00"
+      MessageCountLimit: "100"
+
   userserviceapi:
     build:
       context: ./UserService  
