@@ -34,8 +34,7 @@ namespace UserService.Core.Services
             await _userRepository.AddUserAsync(user);
 
             // Publish an event to RabbitMQ after the user is successfully added
-            var message = $"User with ID {user.Id} created.";
-            _eventPublisher.Publish("user.created", message);
+            _eventPublisher.Publish("user.created", user);
         }
 
         public async Task UpdateUser(User user)
@@ -43,8 +42,7 @@ namespace UserService.Core.Services
             await _userRepository.UpdateUserAsync(user);
 
             // Publish an event to RabbitMQ after the user is successfully updated
-            var message = $"User with ID {user.Id} updated.";
-            _eventPublisher.Publish("user.updated", message);
+            _eventPublisher.Publish("user.updated", user);
         }
 
         public async Task DeleteUser(int id)
@@ -52,8 +50,8 @@ namespace UserService.Core.Services
             await _userRepository.DeleteUserAsync(id);
 
             // Publish an event to RabbitMQ after the user is successfully deleted
-            var message = $"User with ID {id} deleted.";
-            _eventPublisher.Publish("user.deleted", message);
+            var user = new User { Id = id , Name =string.Empty , Email="deleted@domain.com"};
+            _eventPublisher.Publish("user.deleted", user);
         }
     }
 }
