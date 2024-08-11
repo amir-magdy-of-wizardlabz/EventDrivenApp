@@ -1,0 +1,38 @@
+# Create a new order
+POST http://localhost:5002/api/orders
+Content-Type: application/json
+{
+  "productName": "Laptop",
+  "quantity": 1,
+  "price": 1500.00,
+  "orderDate": "2024-08-11T12:34:56"
+}
+
+###
+
+# Get all orders
+GET http://localhost:5002/api/orders
+
+###
+
+# Get a specific order by ID
+GET http://localhost:5002/api/orders/1
+
+###
+
+# Update an order
+PUT http://localhost:5002/api/orders/1
+Content-Type: application/json
+
+{
+  "id": 1,
+  "productName": "Laptop",
+  "quantity": 2,
+  "price": 3000.00,
+  "orderDate": "2024-08-11T12:34:56"
+}
+
+###
+
+# Delete an order
+DELETE http://localhost:5002/api/orders/1

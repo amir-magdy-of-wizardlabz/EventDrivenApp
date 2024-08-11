@@ -15,6 +15,8 @@ namespace OrderService.Infrastructure.Extensions
             services.AddDbContext<OrderDbContext>(options =>
                 options.UseNpgsql(connectionString));
 
+            services.AddHostedService<MigrationHostedService>();
+
             services.AddScoped<IOrderRepository, OrderRepository>();
 
             return services;

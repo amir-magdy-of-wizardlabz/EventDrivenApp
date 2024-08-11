@@ -32,7 +32,9 @@ services:
       - rabbitmq
     environment:
       ConnectionStrings__DefaultConnection: "Host=db;Database=event-driven-user-service;Username=postgres;Password=pass123~"
-
+      RabbitMQ__HostName: "rabbitmq"
+      RabbitMQ__UserName: "ruser"
+      RabbitMQ__Password: "pass123~"
   orderserviceapi:
     build:
       context: ./OrderService  # Adjust context to include all necessary projects
