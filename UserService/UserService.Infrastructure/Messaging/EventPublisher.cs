@@ -1,5 +1,7 @@
 using RabbitMQ.Client;
 using System.Text;
+using System.Text.Json;
+using UserService.Core.Entities;
 using UserService.Core.Interfaces;
 
 namespace UserService.Infrastructure.Messaging
@@ -17,7 +19,7 @@ namespace UserService.Infrastructure.Messaging
             _password = password;
         }
 
-        public void Publish(string queueName, string message)
+        public void Publish(string queueName, User user)
         {
             var factory = new ConnectionFactory() { HostName = _hostname, UserName = _username, Password = _password };
 
@@ -30,6 +32,7 @@ namespace UserService.Infrastructure.Messaging
                                      autoDelete: false,
                                      arguments: null);
 
+                var message = JsonSerializer.Serialize(user); // Serialize User object to JSON
                 var body = Encoding.UTF8.GetBytes(message);
 
                 channel.BasicPublish(exchange: "",

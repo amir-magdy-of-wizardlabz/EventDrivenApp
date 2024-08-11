@@ -1,5 +1,6 @@
 using OrderService.Core.Entities;
 using OrderService.Core.Interfaces;
+using System;
 
 namespace OrderService.Core.Services
 {
@@ -24,11 +25,15 @@ namespace OrderService.Core.Services
 
         public async Task AddOrder(Order order)
         {
+            // Convert OrderDate to UTC before saving
+            order.OrderDate = DateTime.SpecifyKind(order.OrderDate, DateTimeKind.Utc);
             await _orderRepository.AddOrderAsync(order);
         }
 
         public async Task UpdateOrder(Order order)
         {
+            // Convert OrderDate to UTC before updating
+            order.OrderDate = DateTime.SpecifyKind(order.OrderDate, DateTimeKind.Utc);
             await _orderRepository.UpdateOrderAsync(order);
         }
 

@@ -1,7 +1,9 @@
 # Create a new order
 POST http://localhost:5002/api/orders
 Content-Type: application/json
+
 {
+  "userId": 1,
   "productName": "Laptop",
   "quantity": 1,
   "price": 1500.00,
@@ -26,6 +28,7 @@ Content-Type: application/json
 
 {
   "id": 1,
+  "userId": 1,
   "productName": "Laptop",
   "quantity": 2,
   "price": 3000.00,
