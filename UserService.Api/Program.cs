@@ -9,7 +9,8 @@ if (string.IsNullOrEmpty(connectionString))
 {
     throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 }
-builder.Services.AddInfrastructureServices(connectionString);
+builder.Services.AddUserInfrastructureServices( builder.Configuration);
+
 
 // Register the core service
 builder.Services.AddScoped<UserService.Core.Services.UserService>();
