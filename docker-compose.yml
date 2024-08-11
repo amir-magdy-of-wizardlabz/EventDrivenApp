@@ -9,6 +9,15 @@ services:
       POSTGRES_DB: event-driven-user-service
     ports:
       - "5432:5432"
+  
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"  
+      - "15672:15672"  
+    environment:
+      RABBITMQ_DEFAULT_USER: ruser
+      RABBITMQ_DEFAULT_PASS: pass123~
 
   userserviceapi:
     build:
@@ -18,5 +27,9 @@ services:
       - "5001:8080"
     depends_on:
       - db
+      - rabbitmq 
     environment:
       ConnectionStrings__DefaultConnection: "Host=db;Database=event-driven-user-service;Username=postgres;Password=pass123~"
+      RabbitMQ__HostName: "rabbitmq"
+      RabbitMQ__UserName: "ruser"
+      RabbitMQ__Password: "pass123~"
