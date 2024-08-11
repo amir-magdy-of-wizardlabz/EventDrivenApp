@@ -3,12 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserService.Core", "UserService.Core\UserService.Core.csproj", "{AE4AB5BC-05CD-41D8-9B71-928CC9D62F22}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserService.Infrastructure", "UserService.Infrastructure\UserService.Infrastructure.csproj", "{8E9B6810-8E39-402B-ACD1-5724ECD7C3D0}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserService.Api", "UserService.Api\UserService.Api.csproj", "{C0C9EB31-014D-4D98-AC7E-C4D9E64CA2DC}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OrderService", "OrderService", "{F5F56951-039D-400C-ADE6-47432E5BECEA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderService.Core", "OrderService\OrderService.Core\OrderService.Core.csproj", "{05DB8C68-3E97-4B22-A3A4-67CF174FAC7B}"
@@ -16,6 +10,14 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderService.Infrastructure", "OrderService\OrderService.Infrastructure\OrderService.Infrastructure.csproj", "{D63BFA70-B725-403C-A275-9BD6835EEC2C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderService.Api", "OrderService\OrderService.Api\OrderService.Api.csproj", "{DFB89797-4FE4-4B0F-AAA4-4C29F783F86B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UserService", "UserService", "{C255480E-CC05-4396-8620-F01473F8BAF3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserService.Api", "UserService\UserService.Api\UserService.Api.csproj", "{5743BB86-8F29-46B5-96F0-7A7D471A1A15}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserService.Core", "UserService\UserService.Core\UserService.Core.csproj", "{20ECAF75-BA6C-46A7-BA76-ECF6B0FBCB59}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserService.Infrastructure", "UserService\UserService.Infrastructure\UserService.Infrastructure.csproj", "{C192EC05-A257-4D16-A9B6-7AF37977C7F6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,14 +32,6 @@ Global
 		{AE4AB5BC-05CD-41D8-9B71-928CC9D62F22}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AE4AB5BC-05CD-41D8-9B71-928CC9D62F22}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AE4AB5BC-05CD-41D8-9B71-928CC9D62F22}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8E9B6810-8E39-402B-ACD1-5724ECD7C3D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8E9B6810-8E39-402B-ACD1-5724ECD7C3D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8E9B6810-8E39-402B-ACD1-5724ECD7C3D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8E9B6810-8E39-402B-ACD1-5724ECD7C3D0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C0C9EB31-014D-4D98-AC7E-C4D9E64CA2DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C0C9EB31-014D-4D98-AC7E-C4D9E64CA2DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C0C9EB31-014D-4D98-AC7E-C4D9E64CA2DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C0C9EB31-014D-4D98-AC7E-C4D9E64CA2DC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{05DB8C68-3E97-4B22-A3A4-67CF174FAC7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{05DB8C68-3E97-4B22-A3A4-67CF174FAC7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{05DB8C68-3E97-4B22-A3A4-67CF174FAC7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -50,10 +44,25 @@ Global
 		{DFB89797-4FE4-4B0F-AAA4-4C29F783F86B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DFB89797-4FE4-4B0F-AAA4-4C29F783F86B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DFB89797-4FE4-4B0F-AAA4-4C29F783F86B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5743BB86-8F29-46B5-96F0-7A7D471A1A15}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5743BB86-8F29-46B5-96F0-7A7D471A1A15}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5743BB86-8F29-46B5-96F0-7A7D471A1A15}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5743BB86-8F29-46B5-96F0-7A7D471A1A15}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20ECAF75-BA6C-46A7-BA76-ECF6B0FBCB59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20ECAF75-BA6C-46A7-BA76-ECF6B0FBCB59}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20ECAF75-BA6C-46A7-BA76-ECF6B0FBCB59}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20ECAF75-BA6C-46A7-BA76-ECF6B0FBCB59}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C192EC05-A257-4D16-A9B6-7AF37977C7F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C192EC05-A257-4D16-A9B6-7AF37977C7F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C192EC05-A257-4D16-A9B6-7AF37977C7F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C192EC05-A257-4D16-A9B6-7AF37977C7F6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{05DB8C68-3E97-4B22-A3A4-67CF174FAC7B} = {F5F56951-039D-400C-ADE6-47432E5BECEA}
 		{D63BFA70-B725-403C-A275-9BD6835EEC2C} = {F5F56951-039D-400C-ADE6-47432E5BECEA}
 		{DFB89797-4FE4-4B0F-AAA4-4C29F783F86B} = {F5F56951-039D-400C-ADE6-47432E5BECEA}
+		{5743BB86-8F29-46B5-96F0-7A7D471A1A15} = {C255480E-CC05-4396-8620-F01473F8BAF3}
+		{20ECAF75-BA6C-46A7-BA76-ECF6B0FBCB59} = {C255480E-CC05-4396-8620-F01473F8BAF3}
+		{C192EC05-A257-4D16-A9B6-7AF37977C7F6} = {C255480E-CC05-4396-8620-F01473F8BAF3}
 	EndGlobalSection
 EndGlobal
