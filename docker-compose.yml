@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: pass123~
-      POSTGRES_MULTIPLE_DATABASES: event-driven-user-service,event-driven-order-service
+      POSTGRES_MULTIPLE_DATABASES: event-driven-user-service,event-driven-order-service,event-driven-notification-service
     ports:
       - "5432:5432"
     volumes:
@@ -70,3 +70,23 @@ services:
       RabbitMQ__UserName: "ruser"
       RabbitMQ__Password: "pass123~"
       RabbitMQ__QueueNames__UserCreatedQueue: "user.created"
+
+  notificationserviceapi:
+    build:
+      context: ./NotificationService
+      dockerfile: NotificationService.Api/Dockerfile
+    ports:
+      - "5003:8080"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      db:
+        condition: service_started
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=db;Database=event-driven-notification-service;Username=postgres;Password=pass123~"
+      RabbitMQ__HostName: "rabbitmq"
+      RabbitMQ__UserName: "ruser"
+      RabbitMQ__Password: "pass123~"
+      RabbitMQ__QueueNames__UserCreatedQueue: "user.created"
+      Smtp__Host: "smtp4dev"
+      Smtp__Port: 25
