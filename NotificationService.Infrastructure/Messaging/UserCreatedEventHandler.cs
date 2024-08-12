@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using NotificationService.Core.Interfaces;
 using SharedEvents.Events;
+using System;
 
 namespace NotificationService.Infrastructure.Messaging
 {
@@ -15,9 +16,13 @@ namespace NotificationService.Infrastructure.Messaging
         private readonly IServiceProvider _serviceProvider;
         private readonly IModel _channel;
         private readonly string _queueName;
+        private readonly string _exchangeName;
+        private readonly string _routingKey;
 
         public UserCreatedEventHandler(IServiceProvider serviceProvider, IConfiguration configuration)
         {
+            Console.WriteLine("Notification User Consumer is running and waiting for messages...");
+
             _serviceProvider = serviceProvider;
 
             var factory = new ConnectionFactory()
@@ -29,13 +34,35 @@ namespace NotificationService.Infrastructure.Messaging
 
             var connection = factory.CreateConnection();
             _channel = connection.CreateModel();
-            _queueName = configuration["RabbitMQ:QueueNames:UserCreatedQueue"];
-            
+            _queueName = configuration["RabbitMQ:QueueNames:UserCreatedQueue"] ?? "notificationservice.user.created";
+            _exchangeName = configuration["RabbitMQ:ExchangeName"] ?? "UserExchange";
+            _routingKey = configuration["RabbitMQ:RoutingKey"] ?? "user.created";
+
+            // Declare the exchange
+            Console.WriteLine($"Declaring exchange {_exchangeName}");
+            _channel.ExchangeDeclare(exchange: _exchangeName, type: ExchangeType.Direct);
+
+            // Declare the queue
+            Console.WriteLine($"Declaring queue {_queueName}");
             _channel.QueueDeclare(queue: _queueName,
-                                 durable: true,
-                                 exclusive: false,
-                                 autoDelete: false,
-                                 arguments: null);
+                                  durable: true,
+                                  exclusive: false,
+                                  autoDelete: false,
+                                  arguments: null);
+
+            // Bind the queue to the exchange with the routing key
+            Console.WriteLine($"Binding queue {_queueName} to exchange {_exchangeName} with routing key {_routingKey}");
+            try
+            {
+                _channel.QueueBind(queue: _queueName,
+                                   exchange: _exchangeName,
+                                   routingKey: _routingKey);
+                Console.WriteLine("Queue successfully bound to exchange");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to bind queue to exchange: {ex.Message}");
+            }
         }
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -56,7 +83,7 @@ namespace NotificationService.Infrastructure.Messaging
                         var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
                         notificationService.Notify(userCreatedEvent.Email,
                                             "Welcome to Our Service",
-                                             $"Hi {userCreatedEvent.Name} Thank you for creating an account!");
+                                             $"Hi {userCreatedEvent.Name}, thank you for creating an account!");
                     }
                 }
 
@@ -65,7 +92,7 @@ namespace NotificationService.Infrastructure.Messaging
             };
 
             _channel.BasicConsume(queue: _queueName,
-                                  autoAck: false,  
+                                  autoAck: false,
                                   consumer: consumer);
 
             return Task.CompletedTask;

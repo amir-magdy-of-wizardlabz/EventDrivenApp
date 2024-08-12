@@ -1,6 +1,9 @@
 using UserService.Core.Entities;
 using UserService.Core.Interfaces;
 using SharedEvents.Events;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+
 namespace UserService.Core.Services
 {
     public class UserService
@@ -8,7 +11,8 @@ namespace UserService.Core.Services
         private readonly IUserRepository _userRepository;
         private readonly IEventPublisher _eventPublisher;
 
-        private const string EVENT_VERSION = "1.0";        
+        private const string EVENT_VERSION = "1.0";
+        private const string EXCHANGE_NAME = "UserExchange";
 
         public UserService(IUserRepository userRepository, IEventPublisher eventPublisher)
         {
@@ -36,7 +40,15 @@ namespace UserService.Core.Services
             await _userRepository.AddUserAsync(user);
 
             // Publish an event to RabbitMQ after the user is successfully added
-            _eventPublisher.Publish("user.created", new UserCreatedEvent { Id = user.Id, Email = user.Email, Name = user.Name , Version=EVENT_VERSION });
+            var userCreatedEvent = new UserCreatedEvent
+            {
+                Id = user.Id,
+                Email = user.Email,
+                Name = user.Name,
+                Version = EVENT_VERSION
+            };
+
+            _eventPublisher.Publish(EXCHANGE_NAME, "user.created", userCreatedEvent);
         }
 
         public async Task UpdateUser(User user)
@@ -44,7 +56,15 @@ namespace UserService.Core.Services
             await _userRepository.UpdateUserAsync(user);
 
             // Publish an event to RabbitMQ after the user is successfully updated
-            _eventPublisher.Publish("user.updated", new UserUpdatedEvent { Id = user.Id, Email = user.Email, Name = user.Name , Version=EVENT_VERSION });
+            var userUpdatedEvent = new UserUpdatedEvent
+            {
+                Id = user.Id,
+                Email = user.Email,
+                Name = user.Name,
+                Version = EVENT_VERSION
+            };
+
+            _eventPublisher.Publish(EXCHANGE_NAME, "user.updated", userUpdatedEvent);
         }
 
         public async Task DeleteUser(int id)
@@ -52,8 +72,13 @@ namespace UserService.Core.Services
             await _userRepository.DeleteUserAsync(id);
 
             // Publish an event to RabbitMQ after the user is successfully deleted
-            var user = new UserDeletedEvent { Id = id, Version=EVENT_VERSION };
-            _eventPublisher.Publish("user.deleted", user);
+            var userDeletedEvent = new UserDeletedEvent
+            {
+                Id = id,
+                Version = EVENT_VERSION
+            };
+
+            _eventPublisher.Publish(EXCHANGE_NAME, "user.deleted", userDeletedEvent);
         }
     }
 }

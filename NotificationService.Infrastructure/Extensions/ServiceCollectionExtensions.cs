@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NotificationService.Core.Interfaces;
 using NotificationService.Infrastructure.Data;
+using NotificationService.Infrastructure.Messaging;
 using NotificationService.Infrastructure.Utilities;
 
 namespace NotificationService.Infrastructure.Extensions
@@ -34,7 +35,7 @@ namespace NotificationService.Infrastructure.Extensions
 
         private static IServiceCollection AddMessagingInfrastructureServices(IServiceCollection services, IConfiguration configuration)
         {
-            // Register messaging related services here.
+            services.AddHostedService<UserCreatedEventHandler>();
             return services;
         }
     }

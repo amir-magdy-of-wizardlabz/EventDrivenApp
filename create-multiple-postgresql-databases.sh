@@ -5,12 +5,14 @@ set -o errexit
 # Create user and databases
 function create_user_and_database() {
   local DB_DATABASE=$1
-  echo "Creating user and database '$DB_DATABASE'"
-  psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
-    CREATE USER $DB_DATABASE WITH PASSWORD '${POSTGRES_PASSWORD}';
-    CREATE DATABASE $DB_DATABASE;
-    GRANT ALL PRIVILEGES ON DATABASE $DB_DATABASE TO $DB_DATABASE;
-  EOSQL
+  local DB_USER=${DB_DATABASE//-/_}  # Replace hyphens with underscores for the user
+  local DB_NAME=${DB_DATABASE//-/_}  # Replace hyphens with underscores for the database
+  echo "Creating user and database '$DB_NAME' with user '$DB_USER'"
+  psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<EOSQL
+    CREATE USER $DB_USER WITH PASSWORD '${POSTGRES_PASSWORD}';
+    CREATE DATABASE $DB_NAME;
+    GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
+EOSQL
 }
 
 if [ -n "$POSTGRES_MULTIPLE_DATABASES" ]; then

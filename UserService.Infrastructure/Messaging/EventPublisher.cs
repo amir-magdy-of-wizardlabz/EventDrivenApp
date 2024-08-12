@@ -2,7 +2,6 @@ using RabbitMQ.Client;
 using SharedEvents.Events;
 using System.Text;
 using System.Text.Json;
-using UserService.Core.Entities;
 using UserService.Core.Interfaces;
 
 namespace UserService.Infrastructure.Messaging
@@ -20,29 +19,24 @@ namespace UserService.Infrastructure.Messaging
             _password = password;
         }
 
-        public void Publish(string queueName, EventBase user)
+        public void Publish(string exchangeName, string routingKey, EventBase userEvent)
         {
             var factory = new ConnectionFactory() { HostName = _hostname, UserName = _username, Password = _password };
 
             using (var connection = factory.CreateConnection())
             using (var channel = connection.CreateModel())
             {
-                channel.QueueDeclare(queue: queueName,
-                                     durable: false,
-                                     exclusive: false,
-                                     autoDelete: false,
-                                     arguments: null);
+                // Declare the exchange
+                channel.ExchangeDeclare(exchange: exchangeName, type: ExchangeType.Direct);
 
-                var message = JsonSerializer.Serialize(user); // Serialize User object to JSON
+                var message = JsonSerializer.Serialize(userEvent); // Serialize event object to JSON
                 var body = Encoding.UTF8.GetBytes(message);
 
-                channel.BasicPublish(exchange: "",
-                                     routingKey: queueName,
+                channel.BasicPublish(exchange: exchangeName,
+                                     routingKey: routingKey,
                                      basicProperties: null,
                                      body: body);
             }
         }
-
-       
     }
 }

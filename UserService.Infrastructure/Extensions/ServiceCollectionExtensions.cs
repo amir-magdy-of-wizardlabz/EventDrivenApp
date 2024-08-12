@@ -48,6 +48,8 @@ namespace UserService.Infrastructure.Extensions
 
 
             services.AddSingleton<IEventPublisher>(new EventPublisher(rabbitMQHostName, rabbitMQUserName, rabbitMQPassword));
+            
+            services.AddHostedService<RabbitMqSetupService>();
 
             return services;
         }

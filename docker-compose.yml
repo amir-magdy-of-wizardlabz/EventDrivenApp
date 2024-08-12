@@ -52,6 +52,9 @@ services:
       RabbitMQ__HostName: "rabbitmq"
       RabbitMQ__UserName: "ruser"
       RabbitMQ__Password: "pass123~"
+      RabbitMQ__QueueNames__UserCreatedQueue: "owner.user.created"
+      RabbitMQ__ExchangeName: "UserExchange"
+      RabbitMQ__RoutingKey: "user.created"
 
   orderserviceapi:
     build:
@@ -69,7 +72,9 @@ services:
       RabbitMQ__HostName: "rabbitmq"
       RabbitMQ__UserName: "ruser"
       RabbitMQ__Password: "pass123~"
-      RabbitMQ__QueueNames__UserCreatedQueue: "user.created"
+      RabbitMQ__QueueNames__UserCreatedQueue: "orderservice.user.created"
+      RabbitMQ__ExchangeName: "UserExchange"
+      RabbitMQ__RoutingKey: "user.created"
 
   notificationserviceapi:
     build:
@@ -87,7 +92,9 @@ services:
       RabbitMQ__HostName: "rabbitmq"
       RabbitMQ__UserName: "ruser"
       RabbitMQ__Password: "pass123~"
-      RabbitMQ__QueueNames__UserCreatedQueue: "user.created"
+      RabbitMQ__QueueNames__UserCreatedQueue: "notificationservice.user.created"
+      RabbitMQ__ExchangeName: "UserExchange"
+      RabbitMQ__RoutingKey: "user.created"
       Smtp__Host: "smtp4dev"
-      Smtp__Port: 25
+      Smtp__Port: 2525
       Smtp__FromAddress: "emailsender@domain.com"
