@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using RabbitMQ.Client;
 using SharedEvents.Events;
 using System.Text;
@@ -12,13 +13,13 @@ namespace UserService.Infrastructure.Messaging
         private readonly string _username;
         private readonly string _password;
 
-        public EventPublisher(string hostname, string username, string password)
+        public EventPublisher(IConfiguration configuration)
         {
-            _hostname = hostname;
-            _username = username;
-            _password = password;
+            _hostname = configuration["RabbitMQ:HostName"];
+            _username = configuration["RabbitMQ:UserName"];
+            _password = configuration["RabbitMQ:Password"];
         }
-
+       
         void IEventPublisher.Publish<T>(string exchangeName, string routingKey, T userEvent)
         {
             var factory = new ConnectionFactory() { HostName = _hostname, UserName = _username, Password = _password };

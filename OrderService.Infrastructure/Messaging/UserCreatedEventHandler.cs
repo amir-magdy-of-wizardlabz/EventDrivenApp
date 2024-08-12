@@ -22,18 +22,22 @@ namespace OrderService.Infrastructure.Messaging
         {
             _serviceProvider = serviceProvider;
 
+            var rabbitMqHostName = configuration["RabbitMQ:HostName"] ?? throw new ArgumentNullException("RabbitMQ:HostName");
+            var rabbitMqUserName = configuration["RabbitMQ:UserName"] ?? throw new ArgumentNullException("RabbitMQ:UserName");
+            var rabbitMqPassword = configuration["RabbitMQ:Password"] ?? throw new ArgumentNullException("RabbitMQ:Password");
+            _queueName = configuration["RabbitMQ:UserSubscriptionQueue:Queue"] ?? throw new ArgumentNullException("RabbitMQ:UserSubscriptionQueue:Queue");
+            _exchangeName = configuration["RabbitMQ:UserSubscriptionQueue:ExchangeName"] ?? throw new ArgumentNullException("RabbitMQ:UserSubscriptionQueue:ExchangeName");
+            var routingKey = configuration["RabbitMQ:UserSubscriptionQueue:RoutingKey"] ?? throw new ArgumentNullException("RabbitMQ:UserSubscriptionQueue:RoutingKey");
+
             var factory = new ConnectionFactory()
             {
-                HostName = configuration["RabbitMQ:HostName"],
-                UserName = configuration["RabbitMQ:UserName"],
-                Password = configuration["RabbitMQ:Password"]
+                HostName = rabbitMqHostName,
+                UserName = rabbitMqUserName,
+                Password = rabbitMqPassword
             };
 
             var connection = factory.CreateConnection();
             _channel = connection.CreateModel();
-            _queueName = configuration["RabbitMQ:QueueNames:UserCreatedQueue"] ?? "orderservice.user.created";
-            _exchangeName = configuration["RabbitMQ:ExchangeName"] ?? "UserExchange";
-            var routingKey = configuration["RabbitMQ:RoutingKey"] ?? "user.created";
 
             // Declare the exchange
             _channel.ExchangeDeclare(exchange: _exchangeName, type: ExchangeType.Direct);

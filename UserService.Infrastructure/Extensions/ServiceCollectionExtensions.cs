@@ -44,20 +44,8 @@ namespace UserService.Infrastructure.Extensions
         {
             services.AddHostedService<RabbitMqSetupService>();
 
-            var rabbitMQHostName = configuration["RabbitMQ:HostName"];
-            var rabbitMQUserName = configuration["RabbitMQ:UserName"];
-            var rabbitMQPassword = configuration["RabbitMQ:Password"];
 
-            if (string.IsNullOrEmpty(rabbitMQHostName))
-                throw new ArgumentNullException(nameof(rabbitMQHostName), "RabbitMQ hostname cannot be null or empty.");
-
-            if (string.IsNullOrEmpty(rabbitMQUserName))
-                throw new ArgumentNullException(nameof(rabbitMQUserName), "RabbitMQ username cannot be null or empty.");
-
-            if (string.IsNullOrEmpty(rabbitMQPassword))
-                throw new ArgumentNullException(nameof(rabbitMQPassword), "RabbitMQ password cannot be null or empty.");
-
-            services.AddSingleton<IEventPublisher>(new EventPublisher(rabbitMQHostName, rabbitMQUserName, rabbitMQPassword));
+            services.AddSingleton<IEventPublisher>(new EventPublisher(configuration));
 
             return services;
         }

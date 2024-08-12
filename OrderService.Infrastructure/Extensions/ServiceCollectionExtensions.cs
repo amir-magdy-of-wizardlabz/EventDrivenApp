@@ -35,6 +35,7 @@ namespace OrderService.Infrastructure.Extensions
             {
                 return new UserCreatedEventHandler(provider, configuration);
             });
+            services.AddScoped<IOrderPublisher, OrderService.Infrastructure.Messaging.OrderServicePublisher>();
 
             return services;
         }

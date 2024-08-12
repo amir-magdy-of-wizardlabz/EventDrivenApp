@@ -52,9 +52,9 @@ services:
       RabbitMQ__HostName: "rabbitmq"
       RabbitMQ__UserName: "ruser"
       RabbitMQ__Password: "pass123~"
-      RabbitMQ__QueueNames__UserCreatedQueue: "owner.user.created"
-      RabbitMQ__ExchangeName: "UserExchange"
-      RabbitMQ__RoutingKey: "user.created"
+      RabbitMQ__UserPublishQueue__Queue: "owner.user.created"
+      RabbitMQ__UserPublishQueue__ExchangeName: "UserExchange"
+      RabbitMQ__UserPublishQueue__RoutingKey: "user.created"
 
   orderserviceapi:
     build:
@@ -72,9 +72,12 @@ services:
       RabbitMQ__HostName: "rabbitmq"
       RabbitMQ__UserName: "ruser"
       RabbitMQ__Password: "pass123~"
-      RabbitMQ__QueueNames__UserCreatedQueue: "orderservice.user.created"
-      RabbitMQ__ExchangeName: "UserExchange"
-      RabbitMQ__RoutingKey: "user.created"
+      RabbitMQ__UserSubscriptionQueue__Queue: "orderservice.user.created"
+      RabbitMQ__UserSubscriptionQueue__ExchangeName: "UserExchange"
+      RabbitMQ__UserSubscriptionQueue__RoutingKey: "user.created"
+      RabbitMQ__OrderPublishQueue__Queue: "orderservice.order.created"
+      RabbitMQ__OrderPublishQueue__ExchangeName: "OrderExchange"
+      RabbitMQ__OrderPublishQueue__RoutingKey: "order.created"
 
   notificationserviceapi:
     build:
