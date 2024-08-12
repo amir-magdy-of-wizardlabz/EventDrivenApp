@@ -18,27 +18,47 @@ namespace UserService.Infrastructure.Messaging
 
         public RabbitMqSetupService(IConfiguration configuration)
         {
-            _hostname = configuration["RabbitMQ:HostName"];
-            _username = configuration["RabbitMQ:UserName"];
-            _password = configuration["RabbitMQ:Password"];
-            _exchangeName = configuration["RabbitMQ:ExchangeName"] ?? "UserExchange";
-
-            var factory = new ConnectionFactory()
+            try
             {
-                HostName = _hostname,
-                UserName = _username,
-                Password = _password
-            };
+                Console.WriteLine("Initializing RabbitMQ Setup Service...");
 
-            _connection = factory.CreateConnection();
-            _channel = _connection.CreateModel();
+                _hostname = configuration["RabbitMQ:HostName"];
+                _username = configuration["RabbitMQ:UserName"];
+                _password = configuration["RabbitMQ:Password"];
+                _exchangeName = configuration["RabbitMQ:ExchangeName"] ?? "UserExchange";
+
+                var factory = new ConnectionFactory()
+                {
+                    HostName = _hostname,
+                    UserName = _username,
+                    Password = _password
+                };
+
+                _connection = factory.CreateConnection();
+                _channel = _connection.CreateModel();
+
+                Console.WriteLine("RabbitMQ connection and channel established.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Failed initialization of RabbitMQ: " + ex.Message);
+            }
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            // Declare the exchange at startup
-            _channel.ExchangeDeclare(exchange: _exchangeName, type: ExchangeType.Direct);
-            Console.WriteLine($"Exchange {_exchangeName} declared successfully.");
+            try
+            {
+                Console.WriteLine("RabbitMQ Setup Service is running...");
+
+                // Declare the exchange at startup
+                _channel.ExchangeDeclare(exchange: _exchangeName, type: ExchangeType.Direct);
+                Console.WriteLine($"Exchange {_exchangeName} declared successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error during RabbitMQ setup: " + ex.Message);
+            }
 
             return Task.CompletedTask;
         }

@@ -19,7 +19,7 @@ namespace UserService.Infrastructure.Messaging
             _password = password;
         }
 
-        public void Publish(string exchangeName, string routingKey, EventBase userEvent)
+        void IEventPublisher.Publish<T>(string exchangeName, string routingKey, T userEvent)
         {
             var factory = new ConnectionFactory() { HostName = _hostname, UserName = _username, Password = _password };
 

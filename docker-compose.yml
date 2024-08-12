@@ -96,5 +96,5 @@ services:
       RabbitMQ__ExchangeName: "UserExchange"
       RabbitMQ__RoutingKey: "user.created"
       Smtp__Host: "smtp4dev"
-      Smtp__Port: 2525
+      Smtp__Port: 25
       Smtp__FromAddress: "emailsender@domain.com"

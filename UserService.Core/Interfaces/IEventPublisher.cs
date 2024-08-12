@@ -4,6 +4,6 @@ namespace UserService.Core.Interfaces
 {
     public interface IEventPublisher
     {
-        void Publish(string exchangeName, string routingKey, EventBase userEvent);
+        void Publish<T>(string exchangeName, string routingKey, T userEvent) where T : EventBase;
     }
 }

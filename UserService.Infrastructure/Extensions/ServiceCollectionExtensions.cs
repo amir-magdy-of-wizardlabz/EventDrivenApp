@@ -12,14 +12,23 @@ namespace UserService.Infrastructure.Extensions
     {
         public static IServiceCollection AddUserInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
-            AddDataUserServices(services, configuration);
+            Console.WriteLine("Starting AddUserInfrastructureServices...");
+
             AddEventPublisher(services, configuration);
+            AddDataUserServices(services, configuration);
+
+            Console.WriteLine("Finished AddUserInfrastructureServices...");
             return services;
         }
 
-        private static void AddDataUserServices(IServiceCollection services,IConfiguration configuration)
+        private static void AddDataUserServices(IServiceCollection services, IConfiguration configuration)
         {
             var connectionString = configuration.GetConnectionString("DefaultConnection");
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+            }
+
             // Configure DbContext with PostgreSQL
             services.AddDbContext<UserDbContext>(options =>
                 options.UseNpgsql(connectionString));
@@ -31,8 +40,10 @@ namespace UserService.Infrastructure.Extensions
             services.AddHostedService<MigrationHostedService>();
         }
 
-        private static IServiceCollection AddEventPublisher(this IServiceCollection services, IConfiguration configuration)
+        private static IServiceCollection AddEventPublisher(IServiceCollection services, IConfiguration configuration)
         {
+            services.AddHostedService<RabbitMqSetupService>();
+
             var rabbitMQHostName = configuration["RabbitMQ:HostName"];
             var rabbitMQUserName = configuration["RabbitMQ:UserName"];
             var rabbitMQPassword = configuration["RabbitMQ:Password"];
@@ -46,10 +57,7 @@ namespace UserService.Infrastructure.Extensions
             if (string.IsNullOrEmpty(rabbitMQPassword))
                 throw new ArgumentNullException(nameof(rabbitMQPassword), "RabbitMQ password cannot be null or empty.");
 
-
             services.AddSingleton<IEventPublisher>(new EventPublisher(rabbitMQHostName, rabbitMQUserName, rabbitMQPassword));
-            
-            services.AddHostedService<RabbitMqSetupService>();
 
             return services;
         }

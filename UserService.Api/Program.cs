@@ -1,5 +1,4 @@
-using UserService.Infrastructure.Extensions; 
-
+using UserService.Infrastructure.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,8 +8,7 @@ if (string.IsNullOrEmpty(connectionString))
 {
     throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 }
-builder.Services.AddUserInfrastructureServices( builder.Configuration);
-
+builder.Services.AddUserInfrastructureServices(builder.Configuration);
 
 // Register the core service
 builder.Services.AddScoped<UserService.Core.Services.UserService>();
