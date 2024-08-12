@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: pass123~
-      POSTGRES_MULTIPLE_DATABASES: event-driven-user-service,event-driven-order-service
+      POSTGRES_MULTIPLE_DATABASES: event-driven-user-service,event-driven-order-service,event-driven-notification-service
     ports:
       - "5432:5432"
     volumes:
@@ -26,9 +26,19 @@ services:
       timeout: 10s
       retries: 5
 
+  smtp4dev:
+    image: rnwood/smtp4dev
+    ports:
+      - "3000:80"
+      - "2525:25"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      MessageRetentionPeriod: "30.00:00:00"
+      MessageCountLimit: "100"
+
   userserviceapi:
     build:
-      context: ./UserService  
+      context: .
       dockerfile: UserService.Api/Dockerfile
     ports:
       - "5001:8080"
@@ -42,10 +52,13 @@ services:
       RabbitMQ__HostName: "rabbitmq"
       RabbitMQ__UserName: "ruser"
       RabbitMQ__Password: "pass123~"
+      RabbitMQ__UserPublishQueue__Queue: "owner.user.created"
+      RabbitMQ__UserPublishQueue__ExchangeName: "UserExchange"
+      RabbitMQ__UserPublishQueue__RoutingKey: "user.created"
 
   orderserviceapi:
     build:
-      context: ./OrderService  # Adjust context to include all necessary projects
+      context: .
       dockerfile: OrderService.Api/Dockerfile
     ports:
       - "5002:8080"
@@ -59,4 +72,42 @@ services:
       RabbitMQ__HostName: "rabbitmq"
       RabbitMQ__UserName: "ruser"
       RabbitMQ__Password: "pass123~"
-      RabbitMQ__QueueNames__UserCreatedQueue: "user.created"
+      RabbitMQ__UserSubscriptionQueue__Queue: "orderservice.user.created"
+      RabbitMQ__UserSubscriptionQueue__ExchangeName: "UserExchange"
+      RabbitMQ__UserSubscriptionQueue__RoutingKey: "user.created"
+      RabbitMQ__OrderPublishQueue__Queue: "orderservice.order.created"
+      RabbitMQ__OrderPublishQueue__ExchangeName: "OrderExchange"
+      RabbitMQ__OrderPublishQueue__RoutingKey: "order.created"
+
+  notificationserviceapi:
+    build:
+      context: .
+      dockerfile: NotificationService.Api/Dockerfile
+    ports:
+      - "5003:8080"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      db:
+        condition: service_started
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=db;Database=event-driven-notification-service;Username=postgres;Password=pass123~"
+      RabbitMQ__HostName: "rabbitmq"
+      RabbitMQ__UserName: "ruser"
+      RabbitMQ__Password: "pass123~"
+      
+      # Subscription for UserCreated events
+      RabbitMQ__UserSubscriptionQueue__Queue: "notificationservice.user.created"
+      RabbitMQ__UserSubscriptionQueue__ExchangeName: "UserExchange"
+      RabbitMQ__UserSubscriptionQueue__RoutingKey: "user.created"
+      
+      # Subscription for OrderCreated events
+      RabbitMQ__OrderSubscriptionQueue__Queue: "notificationservice.order.created"
+      RabbitMQ__OrderSubscriptionQueue__ExchangeName: "OrderExchange"
+      RabbitMQ__OrderSubscriptionQueue__RoutingKey: "order.created"
+
+      # SMTP Configuration
+      Smtp__Host: "smtp4dev"
+      Smtp__Port: 25
+      Smtp__FromAddress: "emailsender@domain.com"
+
