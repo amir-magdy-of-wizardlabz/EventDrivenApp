@@ -6,8 +6,12 @@ using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
 using NotificationService.Core.Interfaces;
+using NotificationService.Core.Entities;
+using NotificationService.Infrastructure.Data;
 using SharedEvents.Events;
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace NotificationService.Infrastructure.Messaging
 {
@@ -80,6 +84,17 @@ namespace NotificationService.Infrastructure.Messaging
                 {
                     using (var scope = _serviceProvider.CreateScope())
                     {
+                        // Save user information to the database
+                        var dbContext = scope.ServiceProvider.GetRequiredService<NotificationDbContext>();
+                        var user = new User
+                        {
+                            Id = userCreatedEvent.Id,
+                            Email = userCreatedEvent.Email
+                        };
+                        dbContext.Users.Add(user);
+                        await dbContext.SaveChangesAsync();
+
+                        // Notify the user via email
                         var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
                         notificationService.Notify(userCreatedEvent.Email,
                                             "Welcome to Our Service",
