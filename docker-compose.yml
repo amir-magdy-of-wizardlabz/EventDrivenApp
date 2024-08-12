@@ -38,7 +38,7 @@ services:
 
   userserviceapi:
     build:
-      context: ./UserService  
+      context: .
       dockerfile: UserService.Api/Dockerfile
     ports:
       - "5001:8080"
@@ -55,7 +55,7 @@ services:
 
   orderserviceapi:
     build:
-      context: ./OrderService  # Adjust context to include all necessary projects
+      context: .
       dockerfile: OrderService.Api/Dockerfile
     ports:
       - "5002:8080"
@@ -73,7 +73,7 @@ services:
 
   notificationserviceapi:
     build:
-      context: ./NotificationService
+      context: .
       dockerfile: NotificationService.Api/Dockerfile
     ports:
       - "5003:8080"
