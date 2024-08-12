@@ -30,13 +30,12 @@ namespace OrderService.Infrastructure.Extensions
 
         private static IServiceCollection AddMesagingInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
-            // Other services registration...
+            services.AddHostedService<OrderRabbitMqSetupService>();            
             services.AddHostedService<UserCreatedEventHandler>(provider =>
             {
                 return new UserCreatedEventHandler(provider, configuration);
             });
             services.AddScoped<IOrderPublisher, OrderService.Infrastructure.Messaging.OrderServicePublisher>();
-
             return services;
         }
     }

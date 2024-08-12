@@ -5,6 +5,6 @@ namespace OrderService.Core.Interfaces
 {
     public interface IOrderPublisher
     {
-        Task CreateOrder(Order order);
+        Task CreateOrder(SharedEvents.Events.OrderCreatedEvent order);
     }
 }

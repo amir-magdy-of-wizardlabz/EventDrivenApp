@@ -44,7 +44,7 @@ namespace OrderService.Infrastructure.Messaging
 
             // Declare the queue
             _channel.QueueDeclare(queue: _queueName,
-                                  durable: false,
+                                  durable: true,
                                   exclusive: false,
                                   autoDelete: false,
                                   arguments: null);

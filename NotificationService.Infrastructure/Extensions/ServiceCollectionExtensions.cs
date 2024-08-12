@@ -36,6 +36,7 @@ namespace NotificationService.Infrastructure.Extensions
         private static IServiceCollection AddMessagingInfrastructureServices(IServiceCollection services, IConfiguration configuration)
         {
             services.AddHostedService<UserCreatedEventHandler>();
+            services.AddHostedService<OrderCreatedEventHandler>();
             return services;
         }
     }

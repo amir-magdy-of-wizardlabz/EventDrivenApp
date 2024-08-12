@@ -15,9 +15,9 @@ namespace UserService.Infrastructure.Messaging
 
         public EventPublisher(IConfiguration configuration)
         {
-            _hostname = configuration["RabbitMQ:HostName"];
-            _username = configuration["RabbitMQ:UserName"];
-            _password = configuration["RabbitMQ:Password"];
+            _hostname = configuration["RabbitMQ:HostName"] ?? throw new ArgumentNullException("RabbitMQ:HostName");
+            _username = configuration["RabbitMQ:UserName"] ?? throw new ArgumentNullException("RabbitMQ:UserName");
+            _password = configuration["RabbitMQ:Password"] ?? throw new ArgumentNullException("RabbitMQ:Password");
         }
        
         void IEventPublisher.Publish<T>(string exchangeName, string routingKey, T userEvent)

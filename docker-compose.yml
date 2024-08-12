@@ -95,9 +95,19 @@ services:
       RabbitMQ__HostName: "rabbitmq"
       RabbitMQ__UserName: "ruser"
       RabbitMQ__Password: "pass123~"
-      RabbitMQ__QueueNames__UserCreatedQueue: "notificationservice.user.created"
-      RabbitMQ__ExchangeName: "UserExchange"
-      RabbitMQ__RoutingKey: "user.created"
+      
+      # Subscription for UserCreated events
+      RabbitMQ__UserSubscriptionQueue__Queue: "notificationservice.user.created"
+      RabbitMQ__UserSubscriptionQueue__ExchangeName: "UserExchange"
+      RabbitMQ__UserSubscriptionQueue__RoutingKey: "user.created"
+      
+      # Subscription for OrderCreated events
+      RabbitMQ__OrderSubscriptionQueue__Queue: "notificationservice.order.created"
+      RabbitMQ__OrderSubscriptionQueue__ExchangeName: "OrderExchange"
+      RabbitMQ__OrderSubscriptionQueue__RoutingKey: "order.created"
+
+      # SMTP Configuration
       Smtp__Host: "smtp4dev"
       Smtp__Port: 25
       Smtp__FromAddress: "emailsender@domain.com"
+

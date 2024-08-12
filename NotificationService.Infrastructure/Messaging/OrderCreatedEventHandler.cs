@@ -6,7 +6,6 @@ using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
 using NotificationService.Core.Interfaces;
-using NotificationService.Core.Entities;
 using NotificationService.Infrastructure.Data;
 using SharedEvents.Events;
 using System;
@@ -15,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace NotificationService.Infrastructure.Messaging
 {
-    public class UserCreatedEventHandler : BackgroundService
+    public class OrderCreatedEventHandler : BackgroundService
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IModel _channel;
@@ -23,9 +22,9 @@ namespace NotificationService.Infrastructure.Messaging
         private readonly string _exchangeName;
         private readonly string _routingKey;
 
-        public UserCreatedEventHandler(IServiceProvider serviceProvider, IConfiguration configuration)
+        public OrderCreatedEventHandler(IServiceProvider serviceProvider, IConfiguration configuration)
         {
-            Console.WriteLine("Notification Service: UserCreatedEventHandler is running and waiting for messages...");
+            Console.WriteLine("Notification Service: OrderCreatedEventHandler is running and waiting for messages...");
 
             _serviceProvider = serviceProvider;
 
@@ -38,9 +37,9 @@ namespace NotificationService.Infrastructure.Messaging
 
             var connection = factory.CreateConnection();
             _channel = connection.CreateModel();
-            _queueName = configuration["RabbitMQ:UserSubscriptionQueue:Queue"] ?? throw new ArgumentNullException("RabbitMQ:UserSubscriptionQueue:Queue");
-            _exchangeName = configuration["RabbitMQ:UserSubscriptionQueue:ExchangeName"] ?? throw new ArgumentNullException("RabbitMQ:UserSubscriptionQueue:ExchangeName");
-            _routingKey = configuration["RabbitMQ:UserSubscriptionQueue:RoutingKey"] ?? throw new ArgumentNullException("RabbitMQ:UserSubscriptionQueue:RoutingKey");
+            _queueName = configuration["RabbitMQ:OrderSubscriptionQueue:Queue"] ?? throw new ArgumentNullException("RabbitMQ:OrderSubscriptionQueue:Queue");
+            _exchangeName = configuration["RabbitMQ:OrderSubscriptionQueue:ExchangeName"] ?? throw new ArgumentNullException("RabbitMQ:OrderSubscriptionQueue:ExchangeName");
+            _routingKey = configuration["RabbitMQ:OrderSubscriptionQueue:RoutingKey"] ?? throw new ArgumentNullException("RabbitMQ:OrderSubscriptionQueue:RoutingKey");
 
             _channel.ExchangeDeclare(exchange: _exchangeName, type: ExchangeType.Direct);
             _channel.QueueDeclare(queue: _queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
@@ -56,34 +55,28 @@ namespace NotificationService.Infrastructure.Messaging
             {
                 var body = ea.Body.ToArray();
                 var message = Encoding.UTF8.GetString(body);
-                var userCreatedEvent = JsonSerializer.Deserialize<UserCreatedEvent>(message);
+                var orderCreatedEvent = JsonSerializer.Deserialize<OrderCreatedEvent>(message);
 
-                if (userCreatedEvent != null)
+                if (orderCreatedEvent != null)
                 {
                     using (var scope = _serviceProvider.CreateScope())
                     {
-                        try
-                        {
-                            var dbContext = scope.ServiceProvider.GetRequiredService<NotificationDbContext>();
-                            var user = new User
-                            {
-                                Id = userCreatedEvent.Id,
-                                Email = userCreatedEvent.Email
-                            };
-                            dbContext.Users.Add(user);
-                            await dbContext.SaveChangesAsync();
+                        var dbContext = scope.ServiceProvider.GetRequiredService<NotificationDbContext>();
+                        var user = await dbContext.Users.FindAsync(orderCreatedEvent.UserId);
 
+                        if (user != null)
+                        {
                             var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
-                            notificationService.Notify(userCreatedEvent.Email, "Welcome to Our Service", $"Hi {userCreatedEvent.Name}, thank you for creating an account!");
-
-                            _channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
+                            notificationService.Notify(user.Email, "Order Confirmation", $"Your order with ID {orderCreatedEvent.OrderId} has been created successfully!");
                         }
-                        catch (Exception ex)
+                        else
                         {
-                            Console.WriteLine($"Error processing message: {ex.Message}");
+                            Console.WriteLine($"User with ID {orderCreatedEvent.UserId} not found.");
                         }
                     }
                 }
+
+                _channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
             };
 
             _channel.BasicConsume(queue: _queueName, autoAck: false, consumer: consumer);
