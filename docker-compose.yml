@@ -1,4 +1,18 @@
-version: '3.8'
+# Local development stack. The credentials below are throwaway defaults for this sample only,
+# and the infrastructure ports are published on localhost so nothing is reachable from the network.
+
+x-rabbitmq-env: &rabbitmq-env
+  RabbitMQ__HostName: "rabbitmq"
+  RabbitMQ__UserName: "ruser"
+  RabbitMQ__Password: "pass123~"
+
+x-service: &service
+  restart: on-failure
+  depends_on:
+    rabbitmq:
+      condition: service_healthy
+    db:
+      condition: service_healthy
 
 services:
   db:
@@ -8,106 +22,80 @@ services:
       POSTGRES_PASSWORD: pass123~
       POSTGRES_MULTIPLE_DATABASES: event-driven-user-service,event-driven-order-service,event-driven-notification-service
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
-      - ./create-multiple-postgresql-databases.sh:/docker-entrypoint-initdb.d/create-multiple-postgresql-databases.sh
+      - db-data:/var/lib/postgresql/data
+      - ./create-multiple-postgresql-databases.sh:/docker-entrypoint-initdb.d/create-multiple-postgresql-databases.sh:ro
+    healthcheck:
+      # Over TCP on purpose: the temporary server used while init scripts run only listens on a socket.
+      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "127.0.0.1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   rabbitmq:
     image: rabbitmq:3-management
+    # RabbitMQ stores its data per node name, so the hostname has to be stable for the volume to be reused.
+    hostname: rabbitmq
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: ruser
       RABBITMQ_DEFAULT_PASS: pass123~
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "status"]
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
       interval: 10s
       timeout: 10s
       retries: 5
 
   smtp4dev:
-    image: rnwood/smtp4dev
+    image: rnwood/smtp4dev:v3
     ports:
-      - "3000:80"
-      - "2525:25"
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      MessageRetentionPeriod: "30.00:00:00"
-      MessageCountLimit: "100"
+      - "127.0.0.1:3000:80"
+      - "127.0.0.1:2525:25"
 
   userserviceapi:
+    <<: *service
     build:
       context: .
       dockerfile: UserService.Api/Dockerfile
     ports:
       - "5001:8080"
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      db:
-        condition: service_started
     environment:
+      <<: *rabbitmq-env
+      ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: "Host=db;Database=event-driven-user-service;Username=postgres;Password=pass123~"
-      RabbitMQ__HostName: "rabbitmq"
-      RabbitMQ__UserName: "ruser"
-      RabbitMQ__Password: "pass123~"
-      RabbitMQ__UserPublishQueue__Queue: "owner.user.created"
-      RabbitMQ__UserPublishQueue__ExchangeName: "UserExchange"
-      RabbitMQ__UserPublishQueue__RoutingKey: "user.created"
 
   orderserviceapi:
+    <<: *service
     build:
       context: .
       dockerfile: OrderService.Api/Dockerfile
     ports:
       - "5002:8080"
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      db:
-        condition: service_started
     environment:
+      <<: *rabbitmq-env
+      ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: "Host=db;Database=event-driven-order-service;Username=postgres;Password=pass123~"
-      RabbitMQ__HostName: "rabbitmq"
-      RabbitMQ__UserName: "ruser"
-      RabbitMQ__Password: "pass123~"
-      RabbitMQ__UserSubscriptionQueue__Queue: "orderservice.user.created"
-      RabbitMQ__UserSubscriptionQueue__ExchangeName: "UserExchange"
-      RabbitMQ__UserSubscriptionQueue__RoutingKey: "user.created"
-      RabbitMQ__OrderPublishQueue__Queue: "orderservice.order.created"
-      RabbitMQ__OrderPublishQueue__ExchangeName: "OrderExchange"
-      RabbitMQ__OrderPublishQueue__RoutingKey: "order.created"
 
   notificationserviceapi:
+    <<: *service
     build:
       context: .
       dockerfile: NotificationService.Api/Dockerfile
     ports:
       - "5003:8080"
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      db:
-        condition: service_started
     environment:
+      <<: *rabbitmq-env
+      ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: "Host=db;Database=event-driven-notification-service;Username=postgres;Password=pass123~"
-      RabbitMQ__HostName: "rabbitmq"
-      RabbitMQ__UserName: "ruser"
-      RabbitMQ__Password: "pass123~"
-      
-      # Subscription for UserCreated events
-      RabbitMQ__UserSubscriptionQueue__Queue: "notificationservice.user.created"
-      RabbitMQ__UserSubscriptionQueue__ExchangeName: "UserExchange"
-      RabbitMQ__UserSubscriptionQueue__RoutingKey: "user.created"
-      
-      # Subscription for OrderCreated events
-      RabbitMQ__OrderSubscriptionQueue__Queue: "notificationservice.order.created"
-      RabbitMQ__OrderSubscriptionQueue__ExchangeName: "OrderExchange"
-      RabbitMQ__OrderSubscriptionQueue__RoutingKey: "order.created"
-
-      # SMTP Configuration
       Smtp__Host: "smtp4dev"
       Smtp__Port: 25
       Smtp__FromAddress: "emailsender@domain.com"
 
+volumes:
+  db-data:
+  rabbitmq-data:

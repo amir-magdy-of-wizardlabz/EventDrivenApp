@@ -1,2 +1,5 @@
 **/bin/
 **/obj/
+
+# Test projects are not part of any image
+tests/

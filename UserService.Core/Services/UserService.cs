@@ -1,8 +1,7 @@
+using SharedEvents;
+using SharedEvents.Events;
 using UserService.Core.Entities;
 using UserService.Core.Interfaces;
-using SharedEvents.Events;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 
 namespace UserService.Core.Services
 {
@@ -12,7 +11,6 @@ namespace UserService.Core.Services
         private readonly IEventPublisher _eventPublisher;
 
         private const string EVENT_VERSION = "1.0";
-        private const string EXCHANGE_NAME = "UserExchange";
 
         public UserService(IUserRepository userRepository, IEventPublisher eventPublisher)
         {
@@ -20,7 +18,7 @@ namespace UserService.Core.Services
             _eventPublisher = eventPublisher;
         }
 
-        public async Task<User> GetUserById(int id)
+        public async Task<User?> GetUserById(int id)
         {
             return await _userRepository.GetUserByIdAsync(id);
         }
@@ -30,55 +28,64 @@ namespace UserService.Core.Services
             return await _userRepository.GetAllUsersAsync();
         }
 
-        public async Task AddUser(User user)
+        public async Task<User> AddUser(string name, string email)
         {
-            if (await _userRepository.EmailExistsAsync(user.Email))
-            {
-                throw new InvalidOperationException("A user with this email already exists.");
-            }
-
+            var user = new User { Name = name, Email = email };
             await _userRepository.AddUserAsync(user);
 
-            // Publish an event to RabbitMQ after the user is successfully added
-            var userCreatedEvent = new UserCreatedEvent
+            // The save and the publish are two separate writes: if the broker is down the user
+            // exists but the event is lost. Closing that gap needs a transactional outbox.
+            _eventPublisher.Publish(Exchanges.Users, RoutingKeys.UserCreated, new UserCreatedEvent
             {
                 Id = user.Id,
                 Email = user.Email,
                 Name = user.Name,
                 Version = EVENT_VERSION
-            };
+            });
 
-            _eventPublisher.Publish(EXCHANGE_NAME, "user.created", userCreatedEvent);
+            return user;
         }
 
-        public async Task UpdateUser(User user)
+        public async Task<bool> UpdateUser(int id, string name, string email)
         {
+            var user = await _userRepository.GetUserByIdAsync(id);
+            if (user == null)
+            {
+                return false;
+            }
+
+            user.Name = name;
+            user.Email = email;
             await _userRepository.UpdateUserAsync(user);
 
-            // Publish an event to RabbitMQ after the user is successfully updated
-            var userUpdatedEvent = new UserUpdatedEvent
+            _eventPublisher.Publish(Exchanges.Users, RoutingKeys.UserUpdated, new UserUpdatedEvent
             {
                 Id = user.Id,
                 Email = user.Email,
                 Name = user.Name,
                 Version = EVENT_VERSION
-            };
+            });
 
-            _eventPublisher.Publish(EXCHANGE_NAME, "user.updated", userUpdatedEvent);
+            return true;
         }
 
-        public async Task DeleteUser(int id)
+        public async Task<bool> DeleteUser(int id)
         {
-            await _userRepository.DeleteUserAsync(id);
+            var user = await _userRepository.GetUserByIdAsync(id);
+            if (user == null)
+            {
+                return false;
+            }
 
-            // Publish an event to RabbitMQ after the user is successfully deleted
-            var userDeletedEvent = new UserDeletedEvent
+            await _userRepository.DeleteUserAsync(user);
+
+            _eventPublisher.Publish(Exchanges.Users, RoutingKeys.UserDeleted, new UserDeletedEvent
             {
                 Id = id,
                 Version = EVENT_VERSION
-            };
+            });
 
-            _eventPublisher.Publish(EXCHANGE_NAME, "user.deleted", userDeletedEvent);
+            return true;
         }
     }
 }

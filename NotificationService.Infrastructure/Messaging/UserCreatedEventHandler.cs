@@ -1,101 +1,38 @@
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
-using System.Text;
-using System.Text.Json;
-using NotificationService.Core.Interfaces;
 using NotificationService.Core.Entities;
+using NotificationService.Core.Interfaces;
 using NotificationService.Infrastructure.Data;
+using SharedEvents;
 using SharedEvents.Events;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace NotificationService.Infrastructure.Messaging
 {
-    public class UserCreatedEventHandler : BackgroundService
+    public class UserCreatedEventHandler : IEventHandler<UserCreatedEvent>
     {
-        private readonly IServiceProvider _serviceProvider;
-        private readonly IModel _channel;
-        private readonly string _queueName;
-        private readonly string _exchangeName;
-        private readonly string _routingKey;
+        private readonly NotificationDbContext _dbContext;
+        private readonly INotificationService _notificationService;
 
-        public UserCreatedEventHandler(IServiceProvider serviceProvider, IConfiguration configuration)
+        public UserCreatedEventHandler(NotificationDbContext dbContext, INotificationService notificationService)
         {
-            Console.WriteLine("Notification Service: UserCreatedEventHandler is running and waiting for messages...");
-
-            _serviceProvider = serviceProvider;
-
-            var factory = new ConnectionFactory()
-            {
-                HostName = configuration["RabbitMQ:HostName"] ?? throw new ArgumentNullException("RabbitMQ:HostName"),
-                UserName = configuration["RabbitMQ:UserName"] ?? throw new ArgumentNullException("RabbitMQ:UserName"),
-                Password = configuration["RabbitMQ:Password"] ?? throw new ArgumentNullException("RabbitMQ:Password")
-            };
-
-            var connection = factory.CreateConnection();
-            _channel = connection.CreateModel();
-            _queueName = configuration["RabbitMQ:UserSubscriptionQueue:Queue"] ?? throw new ArgumentNullException("RabbitMQ:UserSubscriptionQueue:Queue");
-            _exchangeName = configuration["RabbitMQ:UserSubscriptionQueue:ExchangeName"] ?? throw new ArgumentNullException("RabbitMQ:UserSubscriptionQueue:ExchangeName");
-            _routingKey = configuration["RabbitMQ:UserSubscriptionQueue:RoutingKey"] ?? throw new ArgumentNullException("RabbitMQ:UserSubscriptionQueue:RoutingKey");
-
-            _channel.ExchangeDeclare(exchange: _exchangeName, type: ExchangeType.Direct);
-            _channel.QueueDeclare(queue: _queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
-            _channel.QueueBind(queue: _queueName, exchange: _exchangeName, routingKey: _routingKey);
+            _dbContext = dbContext;
+            _notificationService = notificationService;
         }
 
-        protected override Task ExecuteAsync(CancellationToken stoppingToken)
+        public async Task HandleAsync(UserCreatedEvent @event, CancellationToken cancellationToken)
         {
-            stoppingToken.ThrowIfCancellationRequested();
-
-            var consumer = new EventingBasicConsumer(_channel);
-            consumer.Received += async (model, ea) =>
+            // Store the user before sending, so a mail failure cannot lose the address.
+            // On redelivery the user is already there and only the email is attempted again.
+            var user = await _dbContext.Users.FindAsync(new object[] { @event.Id }, cancellationToken);
+            if (user == null)
             {
-                var body = ea.Body.ToArray();
-                var message = Encoding.UTF8.GetString(body);
-                var userCreatedEvent = JsonSerializer.Deserialize<UserCreatedEvent>(message);
+                _dbContext.Users.Add(new User { Id = @event.Id, Email = @event.Email });
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
 
-                if (userCreatedEvent != null)
-                {
-                    using (var scope = _serviceProvider.CreateScope())
-                    {
-                        try
-                        {
-                            var dbContext = scope.ServiceProvider.GetRequiredService<NotificationDbContext>();
-                            var user = new User
-                            {
-                                Id = userCreatedEvent.Id,
-                                Email = userCreatedEvent.Email
-                            };
-                            dbContext.Users.Add(user);
-                            await dbContext.SaveChangesAsync();
-
-                            var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
-                            notificationService.Notify(userCreatedEvent.Email, "Welcome to Our Service", $"Hi {userCreatedEvent.Name}, thank you for creating an account!");
-
-                            _channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Error processing message: {ex.Message}");
-                        }
-                    }
-                }
-            };
-
-            _channel.BasicConsume(queue: _queueName, autoAck: false, consumer: consumer);
-
-            return Task.CompletedTask;
-        }
-
-        public override void Dispose()
-        {
-            _channel?.Close();
-            _channel?.Dispose();
-            base.Dispose();
+            await _notificationService.NotifyAsync(
+                @event.Email,
+                "Welcome to Our Service",
+                $"Hi {@event.Name}, thank you for creating an account!",
+                cancellationToken);
         }
     }
 }

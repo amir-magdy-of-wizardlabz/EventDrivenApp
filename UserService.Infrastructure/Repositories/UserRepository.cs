@@ -1,10 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Npgsql;
 using UserService.Core.Entities;
+using UserService.Core.Exceptions;
 using UserService.Core.Interfaces;
 using UserService.Infrastructure.Data;
-using UserService.Infrastructure.Exceptions;
 
 namespace UserService.Infrastructure.Repositories
 {
@@ -17,71 +16,45 @@ namespace UserService.Infrastructure.Repositories
             _dbContext = dbContext;
         }
 
-        public async Task<User> GetUserByIdAsync(int id)
+        public async Task<User?> GetUserByIdAsync(int id)
         {
-            var user = await _dbContext.Users.FindAsync(id);
-            if (user == null)
-            {
-                throw new UserNotFoundException($"User with ID {id} was not found.");
-            }
-
-            return user;
+            return await _dbContext.Users.FindAsync(id);
         }
 
         public async Task<IEnumerable<User>> GetAllUsersAsync()
         {
-            return await _dbContext.Users.ToListAsync();
+            return await _dbContext.Users.AsNoTracking().OrderBy(u => u.Id).ToListAsync();
         }
 
         public async Task AddUserAsync(User user)
         {
-            if (await EmailExistsAsync(user.Email))
-            {
-                throw new DuplicateEmailException($"A user with the email '{user.Email}' already exists.");
-            }
-
-            await _dbContext.Users.AddAsync(user);
-            await _dbContext.SaveChangesAsync();
+            _dbContext.Users.Add(user);
+            await SaveChangesAsync(user);
         }
 
         public async Task UpdateUserAsync(User user)
         {
-            // Check if the user exists
-            var existingUser = await _dbContext.Users.FindAsync(user.Id);
-            if (existingUser == null)
-            {
-                throw new UserNotFoundException($"User with ID {user.Id} was not found.");
-            }
-
-            // Check if the email is already used by another user
-            if (await EmailExistsAsync(user.Email) && existingUser.Email != user.Email)
-            {
-                throw new DuplicateEmailException($"A user with the email '{user.Email}' already exists.");
-            }
-
-            // Detach the existing entity to avoid tracking conflict
-            _dbContext.Entry(existingUser).State = EntityState.Detached;
-
-            // Update the user
-            _dbContext.Users.Update(user);
-            await _dbContext.SaveChangesAsync();
+            await SaveChangesAsync(user);
         }
 
-        public async Task DeleteUserAsync(int id)
+        public async Task DeleteUserAsync(User user)
         {
-            var user = await _dbContext.Users.FindAsync(id);
-            if (user == null)
-            {
-                throw new UserNotFoundException($"User with ID {id} was not found.");
-            }
-
             _dbContext.Users.Remove(user);
             await _dbContext.SaveChangesAsync();
         }
 
-        public async Task<bool> EmailExistsAsync(string email)
+        // The unique index on Email is the only check that holds under concurrent requests,
+        // so uniqueness is enforced there rather than with a query beforehand.
+        private async Task SaveChangesAsync(User user)
         {
-            return await _dbContext.Users.AnyAsync(u => u.Email == email);
+            try
+            {
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+            {
+                throw new DuplicateEmailException(user.Email, ex);
+            }
         }
     }
 }

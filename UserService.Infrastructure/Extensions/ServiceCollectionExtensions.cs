@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SharedMessaging;
 using UserService.Core.Interfaces;
 using UserService.Infrastructure.Data;
-using UserService.Infrastructure.Messaging;
 using UserService.Infrastructure.Repositories;
 
 namespace UserService.Infrastructure.Extensions
@@ -12,12 +12,11 @@ namespace UserService.Infrastructure.Extensions
     {
         public static IServiceCollection AddUserInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
-            Console.WriteLine("Starting AddUserInfrastructureServices...");
-
-            AddEventPublisher(services, configuration);
             AddDataUserServices(services, configuration);
 
-            Console.WriteLine("Finished AddUserInfrastructureServices...");
+            // This service only publishes; the queues belong to the services that consume.
+            services.AddRabbitMq(configuration);
+
             return services;
         }
 
@@ -38,16 +37,6 @@ namespace UserService.Infrastructure.Extensions
 
             // Apply migrations at startup
             services.AddHostedService<MigrationHostedService>();
-        }
-
-        private static IServiceCollection AddEventPublisher(IServiceCollection services, IConfiguration configuration)
-        {
-            services.AddHostedService<RabbitMqSetupService>();
-
-
-            services.AddSingleton<IEventPublisher>(new EventPublisher(configuration));
-
-            return services;
         }
     }
 }

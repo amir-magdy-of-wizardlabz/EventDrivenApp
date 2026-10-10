@@ -1,4 +1,4 @@
-# Create a new order
+# Create a new order (the user must exist; an unknown user returns 422)
 POST http://localhost:5002/api/orders
 Content-Type: application/json
 
@@ -6,8 +6,7 @@ Content-Type: application/json
   "userId": 1,
   "productName": "Laptop",
   "quantity": 1,
-  "price": 1500.00,
-  "orderDate": "2024-08-11T12:34:56"
+  "price": 1500.00
 }
 
 ###
@@ -27,12 +26,9 @@ PUT http://localhost:5002/api/orders/1
 Content-Type: application/json
 
 {
-  "id": 1,
-  "userId": 1,
   "productName": "Laptop",
   "quantity": 2,
-  "price": 3000.00,
-  "orderDate": "2024-08-11T12:34:56"
+  "price": 3000.00
 }
 
 ###
