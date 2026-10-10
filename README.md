@@ -1,6 +1,10 @@
 # Event-Driven Microservices Application
 
-A small training example of an event-driven system: three .NET 8 services that never call each other and only communicate through events on RabbitMQ. Everything runs with Docker Compose.
+[![CI](https://github.com/amir-magdy-of-wizardlabz/EventDrivenApp/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/amir-magdy-of-wizardlabz/EventDrivenApp/actions/workflows/ci.yml)
+[![.NET 10](https://img.shields.io/badge/.NET-10-512BD4)](https://dotnet.microsoft.com/download/dotnet/10.0)
+[![License: MIT](https://img.shields.io/github/license/amir-magdy-of-wizardlabz/EventDrivenApp)](LICENSE)
+
+A small training example of an event-driven system: three .NET 10 services that never call each other and only communicate through events on RabbitMQ. Everything runs with Docker Compose.
 
 ## Overview
 
@@ -32,6 +36,8 @@ Supporting containers: PostgreSQL (one server, one database per service), Rabbit
 | `order.created` | Publisher | Sends the order confirmation to the stored email |
 
 ## Running the Application
+
+You need Docker. The .NET 10 SDK is only needed to run the tests or a service outside Docker.
 
 ```sh
 docker compose up --build
@@ -96,6 +102,7 @@ SharedMessaging/         RabbitMQ implementation: connection, publisher, consume
 <Service>.Api/           HTTP endpoints, request models, Program.cs, Dockerfile
 <Service>.Core/          Entities, repository interfaces, business logic. No infrastructure dependencies
 <Service>.Infrastructure/ EF Core context and migrations, repositories, event handlers
+tests/                   Unit tests per service and integration tests against real RabbitMQ and PostgreSQL
 ```
 
 Each service applies its own EF Core migrations when it starts.
@@ -115,6 +122,26 @@ To add a migration (example for UserService):
 dotnet ef migrations add <Name> --project UserService.Infrastructure --startup-project UserService.Api
 ```
 
+## Tests
+
+```sh
+dotnet test
+```
+
+| Project | What it covers | Needs Docker |
+| --- | --- | --- |
+| `tests/UserService.Tests`, `tests/OrderService.Tests` | Business rules, which events are published, and the HTTP status codes, using in-memory fakes | No |
+| `tests/NotificationService.Tests` | Event handlers: what is stored, what is emailed, and that handling an event twice is safe | No |
+| `tests/IntegrationTests` | The real publisher and consumer against RabbitMQ (delivery, retry, dead-lettering), and the migrations and unique email constraint against PostgreSQL | Yes |
+
+The integration tests start their own containers with [Testcontainers](https://dotnet.testcontainers.org/), so they do not need the Compose stack and do not touch its data. To run only the tests that need no Docker:
+
+```sh
+dotnet test --project tests/UserService.Tests
+```
+
+The same build and tests run on every pull request in `.github/workflows/ci.yml`.
+
 ## Known Limitations
 
 These are deliberate simplifications. Each one is a good exercise.
@@ -122,5 +149,6 @@ These are deliberate simplifications. Each one is a good exercise.
 - **No transactional outbox.** A service saves to its database and then publishes. If the publish fails, the row exists but the event was never sent, and the other services never find out. The fix is to write the event to an outbox table in the same transaction and publish it from a background worker.
 - **No replay for dead-lettered messages.** They have to be moved back by hand, for example with the shovel plugin.
 - **Eventual consistency is visible.** An order placed immediately after creating a user can get a `422` if OrderService has not processed `user.created` yet.
-- **No authentication** on the APIs, and **no automated tests**.
+- **No authentication** on the APIs.
+- **RabbitMQ.Client 6.** Version 7 has a fully asynchronous API; here publishing blocks briefly while it waits for the broker's confirm.
 - **`System.Net.Mail.SmtpClient`** is used to avoid a dependency. Microsoft recommends MailKit for new code.
