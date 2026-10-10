@@ -9,6 +9,8 @@ namespace SharedMessaging
         [Required]
         public string HostName { get; set; } = string.Empty;
 
+        public int Port { get; set; } = 5672;
+
         [Required]
         public string UserName { get; set; } = string.Empty;
 

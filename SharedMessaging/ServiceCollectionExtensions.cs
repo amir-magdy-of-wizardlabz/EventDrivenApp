@@ -23,6 +23,7 @@ namespace SharedMessaging
                 var factory = new ConnectionFactory
                 {
                     HostName = options.HostName,
+                    Port = options.Port,
                     UserName = options.UserName,
                     Password = options.Password,
                     DispatchConsumersAsync = true,
