@@ -1,24 +1,11 @@
 #!/bin/bash
-set -e
-set -o errexit
+set -euo pipefail
 
-# Create user and databases
-function create_user_and_database() {
-  local DB_DATABASE=$1
-  local DB_USER=${DB_DATABASE//-/_}  # Replace hyphens with underscores for the user
-  local DB_NAME=${DB_DATABASE//-/_}  # Replace hyphens with underscores for the database
-  echo "Creating user and database '$DB_NAME' with user '$DB_USER'"
-  psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<EOSQL
-    CREATE USER $DB_USER WITH PASSWORD '${POSTGRES_PASSWORD}';
-    CREATE DATABASE $DB_NAME;
-    GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
-EOSQL
-}
-
-if [ -n "$POSTGRES_MULTIPLE_DATABASES" ]; then
-  echo "Multiple database creation requested: $POSTGRES_MULTIPLE_DATABASES"
-  for db in $(echo "$POSTGRES_MULTIPLE_DATABASES" | tr ',' ' '); do
-    create_user_and_database "$db"
+# Creates one database per name in POSTGRES_MULTIPLE_DATABASES (comma-separated).
+# Runs only the first time the container starts with an empty data directory.
+if [ -n "${POSTGRES_MULTIPLE_DATABASES:-}" ]; then
+  for db in ${POSTGRES_MULTIPLE_DATABASES//,/ }; do
+    echo "Creating database '$db'"
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname postgres -c "CREATE DATABASE \"$db\";"
   done
-  echo "Multiple databases created"
 fi

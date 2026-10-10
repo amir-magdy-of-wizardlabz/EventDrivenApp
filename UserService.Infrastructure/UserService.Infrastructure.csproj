@@ -3,13 +3,13 @@
   <ItemGroup>
     <ProjectReference Include="..\UserService.Core\UserService.Core.csproj" />
     <ProjectReference Include="..\SharedEvents\SharedEvents.csproj" />
+    <ProjectReference Include="..\SharedMessaging\SharedMessaging.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.7" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
-    <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
   </ItemGroup>
 
   <PropertyGroup>

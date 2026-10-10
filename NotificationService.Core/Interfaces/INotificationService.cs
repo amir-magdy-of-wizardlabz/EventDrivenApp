@@ -2,6 +2,6 @@ namespace NotificationService.Core.Interfaces
 {
     public interface INotificationService
     {
-        void Notify(string toAddress, string subject, string body);
+        Task NotifyAsync(string toAddress, string subject, string body, CancellationToken cancellationToken);
     }
 }

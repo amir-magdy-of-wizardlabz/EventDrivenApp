@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using UserService.Core.Entities;
-using UserService.Core.Services;
+using UserService.Api.Contracts;
+using UserService.Core.Exceptions;
 
 namespace UserService.Api.Controllers
 {
@@ -34,51 +34,38 @@ namespace UserService.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddUser([FromBody] User user)
+        public async Task<IActionResult> AddUser([FromBody] UserRequest request)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
+                var user = await _userService.AddUser(request.Name, request.Email);
+                return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
             }
-
-            await _userService.AddUser(user);
-            return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
+            catch (DuplicateEmailException ex)
+            {
+                return Conflict(ex.Message);
+            }
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id, [FromBody] User user)
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UserRequest request)
         {
-            if (id != user.Id)
+            try
             {
-                return BadRequest("User ID mismatch");
+                var updated = await _userService.UpdateUser(id, request.Name, request.Email);
+                return updated ? NoContent() : NotFound();
             }
-
-            if (!ModelState.IsValid)
+            catch (DuplicateEmailException ex)
             {
-                return BadRequest(ModelState);
+                return Conflict(ex.Message);
             }
-
-            var existingUser = await _userService.GetUserById(id);
-            if (existingUser == null)
-            {
-                return NotFound();
-            }
-
-            await _userService.UpdateUser(user);
-            return NoContent();
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
-            var existingUser = await _userService.GetUserById(id);
-            if (existingUser == null)
-            {
-                return NotFound();
-            }
-
-            await _userService.DeleteUser(id);
-            return NoContent();
+            var deleted = await _userService.DeleteUser(id);
+            return deleted ? NoContent() : NotFound();
         }
     }
 }

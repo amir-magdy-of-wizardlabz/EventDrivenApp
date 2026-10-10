@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting; // Add this using directive
+using Microsoft.Extensions.Hosting;
 
 namespace UserService.Infrastructure.Data
 {

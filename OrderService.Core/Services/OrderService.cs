@@ -1,8 +1,6 @@
 using OrderService.Core.Entities;
 using OrderService.Core.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using SharedEvents;
 using SharedEvents.Events;
 
 namespace OrderService.Core.Services
@@ -10,15 +8,17 @@ namespace OrderService.Core.Services
     public class OrderService
     {
         private readonly IOrderRepository _orderRepository;
-        private readonly IOrderPublisher _orderPublisher;
+        private readonly IEventPublisher _eventPublisher;
 
-        public OrderService(IOrderRepository orderRepository, IOrderPublisher orderPublisher)
+        private const string EVENT_VERSION = "1.0";
+
+        public OrderService(IOrderRepository orderRepository, IEventPublisher eventPublisher)
         {
             _orderRepository = orderRepository;
-            _orderPublisher = orderPublisher;
+            _eventPublisher = eventPublisher;
         }
 
-        public async Task<Order> GetOrderById(int id)
+        public async Task<Order?> GetOrderById(int id)
         {
             return await _orderRepository.GetOrderByIdAsync(id);
         }
@@ -28,35 +28,63 @@ namespace OrderService.Core.Services
             return await _orderRepository.GetAllOrdersAsync();
         }
 
-        public async Task AddOrder(Order order)
+        // Returns null when the user is not known to this service (yet).
+        public async Task<Order?> AddOrder(int userId, string productName, int quantity, decimal price)
         {
-            // Convert OrderDate to UTC before saving
-            order.OrderDate = DateTime.SpecifyKind(order.OrderDate, DateTimeKind.Utc);
+            if (!await _orderRepository.UserExistsAsync(userId))
+            {
+                return null;
+            }
+
+            var order = new Order
+            {
+                UserId = userId,
+                ProductName = productName,
+                Quantity = quantity,
+                Price = price,
+                OrderDate = DateTime.UtcNow
+            };
             await _orderRepository.AddOrderAsync(order);
 
-            // Publish an OrderCreatedEvent after the order is successfully added
-            var orderCreatedEvent = new OrderCreatedEvent
+            // Same dual-write gap as in UserService: saved but not published if the broker is down.
+            _eventPublisher.Publish(Exchanges.Orders, RoutingKeys.OrderCreated, new OrderCreatedEvent
             {
                 OrderId = order.Id,
                 UserId = order.UserId,
                 OrderDate = order.OrderDate,
                 TotalAmount = order.Price,
-                Version = "1.0"
-            };
+                Version = EVENT_VERSION
+            });
 
-            await _orderPublisher.CreateOrder(orderCreatedEvent);
+            return order;
         }
 
-        public async Task UpdateOrder(Order order)
+        public async Task<bool> UpdateOrder(int id, string productName, int quantity, decimal price)
         {
-            // Convert OrderDate to UTC before updating
-            order.OrderDate = DateTime.SpecifyKind(order.OrderDate, DateTimeKind.Utc);
+            var order = await _orderRepository.GetOrderByIdAsync(id);
+            if (order == null)
+            {
+                return false;
+            }
+
+            order.ProductName = productName;
+            order.Quantity = quantity;
+            order.Price = price;
             await _orderRepository.UpdateOrderAsync(order);
+
+            return true;
         }
 
-        public async Task DeleteOrder(int id)
+        public async Task<bool> DeleteOrder(int id)
         {
-            await _orderRepository.DeleteOrderAsync(id);
+            var order = await _orderRepository.GetOrderByIdAsync(id);
+            if (order == null)
+            {
+                return false;
+            }
+
+            await _orderRepository.DeleteOrderAsync(order);
+            return true;
         }
     }
 }

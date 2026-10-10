@@ -10,13 +10,13 @@ Accept: application/json
 
 ###
 
-### Create a new user
+### Create a new user (a second call with the same email returns 409)
 POST http://localhost:5001/api/users
 Content-Type: application/json
 
 {
-    "name": "Joh Doe",
-    "email": "johndoe@example.com2"
+    "name": "John Doe",
+    "email": "johndoe@example.com"
 }
 
 ###
@@ -26,7 +26,6 @@ PUT http://localhost:5001/api/users/1
 Content-Type: application/json
 
 {
-    "id": 1,
     "name": "John Doe Updated",
     "email": "john.doe.updated@example.com"
 }

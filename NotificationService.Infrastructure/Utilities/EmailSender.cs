@@ -1,4 +1,3 @@
-using System.Net;
 using System.Net.Mail;
 using Microsoft.Extensions.Configuration;
 using NotificationService.Core.Interfaces;
@@ -13,28 +12,18 @@ namespace NotificationService.Infrastructure.Utilities
 
         public EmailSender(IConfiguration configuration)
         {
-            _smtpHost = configuration["Smtp:Host"] ?? throw new ArgumentNullException(nameof(_smtpHost), "SMTP Host configuration is missing");
+            _smtpHost = configuration["Smtp:Host"] ?? throw new InvalidOperationException("Configuration value 'Smtp:Host' not found.");
             _smtpPort = int.Parse(configuration["Smtp:Port"] ?? "25"); // Default to port 25
             _fromAddress = configuration["Smtp:FromAddress"] ?? "admin@emailserver.com";
         }
 
-        public void Notify(string toAddress, string subject, string body)
+        public async Task NotifyAsync(string toAddress, string subject, string body, CancellationToken cancellationToken)
         {
-            var mailMessage = new MailMessage
-            {
-                From = new MailAddress(_fromAddress),
-                Subject = subject,
-                Body = body,
-                IsBodyHtml = true,
-            };
+            // Plain text: the body contains values supplied by users.
+            using var mailMessage = new MailMessage(_fromAddress, toAddress, subject, body);
+            using var smtpClient = new SmtpClient(_smtpHost, _smtpPort);
 
-            mailMessage.To.Add(new MailAddress(toAddress));
-
-            using (var smtpClient = new SmtpClient(_smtpHost, _smtpPort))
-            {
-                smtpClient.Credentials = CredentialCache.DefaultNetworkCredentials;
-                smtpClient.Send(mailMessage);
-            }
+            await smtpClient.SendMailAsync(mailMessage, cancellationToken);
         }
     }
 }

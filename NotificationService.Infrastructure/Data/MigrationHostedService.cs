@@ -4,9 +4,8 @@ using Microsoft.Extensions.Hosting;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using NotificationService.Infrastructure.Data;
 
-namespace NotificationService.Infrastructure
+namespace NotificationService.Infrastructure.Data
 {
     public class MigrationHostedService : IHostedService
     {

@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using OrderService.Core.Entities;
-using OrderService.Core.Services;
+using OrderService.Api.Contracts;
 
 namespace OrderService.Api.Controllers
 {
@@ -34,51 +33,32 @@ namespace OrderService.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddOrder([FromBody] Order order)
+        public async Task<IActionResult> AddOrder([FromBody] CreateOrderRequest request)
         {
-            if (!ModelState.IsValid)
+            var order = await _orderService.AddOrder(request.UserId, request.ProductName, request.Quantity, request.Price);
+            if (order == null)
             {
-                return BadRequest(ModelState);
+                // Users arrive here asynchronously, so a brand-new user may not be known for a moment.
+                return Problem(
+                    statusCode: StatusCodes.Status422UnprocessableEntity,
+                    detail: $"User {request.UserId} is not known to the order service.");
             }
 
-            await _orderService.AddOrder(order);
             return CreatedAtAction(nameof(GetOrder), new { id = order.Id }, order);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateOrder(int id, [FromBody] Order order)
+        public async Task<IActionResult> UpdateOrder(int id, [FromBody] UpdateOrderRequest request)
         {
-            if (id != order.Id)
-            {
-                return BadRequest("Order ID mismatch");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var existingOrder = await _orderService.GetOrderById(id);
-            if (existingOrder == null)
-            {
-                return NotFound();
-            }
-
-            await _orderService.UpdateOrder(order);
-            return NoContent();
+            var updated = await _orderService.UpdateOrder(id, request.ProductName, request.Quantity, request.Price);
+            return updated ? NoContent() : NotFound();
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteOrder(int id)
         {
-            var existingOrder = await _orderService.GetOrderById(id);
-            if (existingOrder == null)
-            {
-                return NotFound();
-            }
-
-            await _orderService.DeleteOrder(id);
-            return NoContent();
+            var deleted = await _orderService.DeleteOrder(id);
+            return deleted ? NoContent() : NotFound();
         }
     }
 }

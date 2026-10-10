@@ -16,11 +16,16 @@ namespace OrderService.Infrastructure.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            // User ids are assigned by UserService and copied from its events.
+            modelBuilder.Entity<User>()
+                .Property(u => u.Id)
+                .ValueGeneratedNever();
+
             modelBuilder.Entity<Order>()
                 .HasOne<User>()  // Configure the relationship
                 .WithMany()
                 .HasForeignKey(o => o.UserId)
-                .OnDelete(DeleteBehavior.Cascade);  // Optional: define delete behavior
+                .OnDelete(DeleteBehavior.Cascade);  // Deleting a user removes their orders
 
             base.OnModelCreating(modelBuilder);
         }

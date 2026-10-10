@@ -14,36 +14,36 @@ namespace OrderService.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<Order> GetOrderByIdAsync(int id)
+        public async Task<Order?> GetOrderByIdAsync(int id)
         {
             return await _context.Orders.FindAsync(id);
         }
 
         public async Task<IEnumerable<Order>> GetAllOrdersAsync()
         {
-            return await _context.Orders.ToListAsync();
+            return await _context.Orders.AsNoTracking().OrderBy(o => o.Id).ToListAsync();
         }
 
         public async Task AddOrderAsync(Order order)
         {
-            await _context.Orders.AddAsync(order);
+            _context.Orders.Add(order);
             await _context.SaveChangesAsync();
         }
 
         public async Task UpdateOrderAsync(Order order)
         {
-            _context.Orders.Update(order);
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteOrderAsync(int id)
+        public async Task DeleteOrderAsync(Order order)
         {
-            var order = await _context.Orders.FindAsync(id);
-            if (order != null)
-            {
-                _context.Orders.Remove(order);
-                await _context.SaveChangesAsync();
-            }
+            _context.Orders.Remove(order);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<bool> UserExistsAsync(int userId)
+        {
+            return await _context.Users.AnyAsync(u => u.Id == userId);
         }
     }
 }
